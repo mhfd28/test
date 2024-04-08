@@ -1,3 +1,4 @@
+version: "3.9"  # Specify the Docker Compose version (recommended: 3.8 or higher)
 
 services:
   rabbitmq:
@@ -14,16 +15,15 @@ services:
     image: postgres:16
     networks:
       - main
-    port:
+    ports:
       - "5432:5432"
-    restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/date
+      - postgres_data:/var/lib/postgresql/data  # Corrected typo: 'data' instead of 'date'
 
     environment:
       - POSTGRES_DB=postgres
-      - POSTGRES_user=blog23
-      - POSGRES_PASSWORD=0440101069mhfd29
+      - POSTGRES_USER=blog23  # Corrected typo: 'user' instead of 'user'
+      - POSTGRES_PASSWORD=0440101069mhfd29
 
   celery_worker:
     container_name: celery_worker
@@ -33,40 +33,39 @@ services:
       - rabbitmq
       - postgres
     environment:
-      - C_FORCE_ROOT:"true"
-    restart : always
+      - C_FORCE_ROOT: "true"  # Corrected typo: 'C_FORCE_ROOT' instead of 'C_FORCE_ROOT'
+    restart: always
     build: .
     networks:
       - main
 
   app:
-     build: .
-     container_name: app
-     command: sh -c "pytho manage.py migrate && gnicorn blog23.wsgi -b 0000:8000"
-     volumes:
-       - .:/code/
-     restart:
-       - always
-     networks:
-       - main
-     expose:
-       - "8000"
-     depends_on:
-       - postgres
+    build: .
+    container_name: app
+    command: sh -c "python manage.py migrate && gunicorn blog23.wsgi -b 0.0.0.0:8000"  # Corrected: use 0.0.0.0 for internal access
+    volumes:
+      - .:/code/
+    restart: always
+    networks:
+      - main
+    expose:
+      - "8000"  # Expose port for internal Docker network access
+    depends_on:
+      - postgres
 
-   nginx:
-     container_name: nginx
-     image: nginx:1.25.4
-     command: nginx -g 'deamon off;'
-     posts:
-       - "80:80"
-     networks:
-       - main
-     restart: always
-     volumes:
-       - ./nginx.conf:/etc/nginx/nginx.conf
-     depends_on:
-       - app
+  nginx:
+    container_name: nginx
+    image: nginx:1.25.4
+    command: nginx -g 'daemon off;'
+    ports:
+      - "80:80"  # Corrected: map port 80 of the host to port 80 of the container
+    networks:
+      - main
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
 
 networks:
   main:
