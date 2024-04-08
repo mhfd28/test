@@ -1,0 +1,75 @@
+
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.13.1
+    networks:
+      - main
+    ports:
+      - "5672:5672"
+    restart: always
+
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    networks:
+      - main
+    port:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/date
+
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_user=blog23
+      - POSGRES_PASSWORD=0440101069mhfd29
+
+  celery_worker:
+    container_name: celery_worker
+    command: "celery -A blog23 worker -l INFO"
+    depends_on:
+      - app
+      - rabbitmq
+      - postgres
+    environment:
+      - C_FORCE_ROOT:"true"
+    restart : always
+    build: .
+    networks:
+      - main
+
+  app:
+     build: .
+     container_name: app
+     command: sh -c "pytho manage.py migrate && gnicorn blog23.wsgi -b 0000:8000"
+     volumes:
+       - .:/code/
+     restart:
+       - always
+     networks:
+       - main
+     expose:
+       - "8000"
+     depends_on:
+       - postgres
+
+   nginx:
+     container_name: nginx
+     image: nginx:1.25.4
+     command: nginx -g 'deamon off;'
+     posts:
+       - "80:80"
+     networks:
+       - main
+     restart: always
+     volumes:
+       - ./nginx.conf:/etc/nginx/nginx.conf
+     depends_on:
+       - app
+
+networks:
+  main:
+
+volumes:
+  postgres_data:
