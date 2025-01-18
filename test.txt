@@ -1,345 +1,60 @@
-this is my nginx setting in docker compose file :   nginx:
-
-     container_name: nginx
-
-     image: nginx:1.27.3
-
-     command: nginx -g 'daemon off;'
-
-     ports:
-
-       - "80:80"
-
-     networks:
-
-       - main
-
-     restart: always
-
-     volumes:
-
-       - ./nginx.conf:/etc/nginx/nginx.conf
-
-     depends_on:
-
-       - app , and this is my nginx.conf : 
-
-user www-data;
-
+hi  this is my nginx part in docker compose file :   nginx:
+     container_name: nginx
+     image: nginx:1.27.3
+     command: nginx -g 'daemon off;'
+     ports:
+       - "80:80"
+     networks:
+       - main
+     restart: always
+     volumes:
+       - ./nginx.conf:/etc/nginx/nginx.conf
+     depends_on:
+       - app
+, and this is my nginx.conf : user  nginx;
 worker_processes auto;
-
-pid /run/nginx.pid;
-
-include /etc/nginx/modules-enabled/*.conf;
-
-
-
-worker_rlimit_nofile 3048;
-
-
-
+error_log  /var/log/nginx/error.log notice;
+pid        /run/nginx.pid;
 events {
+    worker_connections  1024;
+}
 
-  worker_connections 1024;
+http {
+    include     /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent"';
 
-  multi_accept off;
+    access_log  /var/log/nginx/access.log  main;
+    sendfile        on;
+    #tcp_nopush     on;
+    keepalive_timeout  65;
+    #gzip  on;
+    #gzip_disable "msie6";
+    #gzip_min_length  1000;
+    #gzip_proxied any;
+    #gzip_vary on;
+    #gzip_comp_level 6;
+    #gzip_buffers    16 8k;
+    #gzip_http_version 1.1;
 
-  use epoll;
+
+    server {
+            server_name storeyab.com;
+            listen 80;
+            location = /favicon.ico { access_log off; log_not_found off; }
+
+                        location /static_in_env/ {
+
+                                root /home/code/;
+
+
+
+                        }
+
+    }
 
 }
 
-
-
-
-
-http{
-
-
-
-    sendfile on;
-
-    tcp_nopush on;
-
-    tcp_nodelay on;
-
-    keepalive_timeout 75s;
-
-    #keepalive_requests 1000;
-
-    proxy_send_timeout 75s;
-
-    proxy_read_timeout 120s;
-
-    proxy_connect_timeout 120s;
-
-
-
-    include /etc/nginx/mime.types;
-
-    default_type application/octet-stream;
-
-
-
-    ##
-
-    # SSL Settings
-
-    ##
-
-
-
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
-
-    ssl_prefer_server_ciphers on;
-
-
-
-    proxy_cache_path /data/nginx/cache levels=1:2 keys_zone=mycache:150m inactive=3h max_size=40g;
-
-
-
-#    limit_conn_zone $binary_remote_addr zone=liconn:15m;
-
-#    limit_req_zone $binary_remote_addr zone=lireq:15m rate=10r/s;
-
-#    limit_req_status 429;
-
-
-
-    access_log /var/log/nginx/access.log;
-
-    error_log /var/log/nginx/error.log;
-
-
-
-    #include /etc/nginx/conf.d/*.conf;
-
-    #include /etc/nginx/sites-enabled/*;
-
-
-
-
-
-    client_max_body_size 350m;
-
-    open_file_cache max=500 inactive=30s;
-
-    #open_file_cache_valid 60s;
-
-    #open_file_cache_min_uses 4;
-
-    open_file_cache_errors off;
-
-
-
-    ##
-
-    # Gzip Settings
-
-    ##
-
-
-
-    gzip on;
-
-    gzip_min_length 100;
-
-    gzip_comp_level 6;
-
-    #gzip_disable "msie6";
-
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-
-
-
-    # gzip_vary on;
-
-    # gzip_proxied any;
-
-    # gzip_comp_level 6;
-
-    # gzip_buffers 16 8k;
-
-    # gzip_http_version 1.1;
-
-
-
-    map $http_user_agent $ua {
-
-    '' "Fixing-Empty-User-Agent";
-
-    default $http_user_agent;
-
-    }
-
-  
-
-    server{
-
-          listen 80;
-
-          server_name www.storeyab.ir storeyab.ir;
-
-          return 301 $scheme://storeyab.com$request_uri;
-
-      #rewrite ^/(.*) https://storeyab.com/$1 permanent;
-
-   }
-
-   
-
-   server{
-
-           server_name www.storeyab.com;
-
-           listen 80;
-
-           return 301 $scheme://storeyab.com$request_uri;
-
-       #rewrite ^/(.*) https://storeyab.com/$1 permanent;
-
-   }
-
-   
-
-   server{
-
-        
-
-            server_name storeyab.com;
-
-            #listen 80;
-
-            #deny some_ip_address;
-
-#           #limit_conn liconn 10;
-
-#           #limit_req zone=lireq burst=8;
-
-
-
-            location = /favicon.ico { access_log off; log_not_found off; }
-
-      location /static_in_env/ { 
-
-        root /home/mhfd/newblog17/blog23;
-
-        
-
-        }
-
-
-
-      location / {
-
-
-
-        #proxy_set_header Host $host;
-
-        #proxy_set_header X-Real-IP $remote_addr;
-
-        #proxy_set_header Accept-Encoding "";
-
-        proxy_set_header Host $http_host;
-
-        proxy_set_header X-Real-IP $remote_addr;
-
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-
-
-        proxy_pass http://unix:/home/mhfd/newblog17/blog23/blog23.sock;
-
-
-
-        proxy_cache mycache;
-
-        proxy_cache_valid 404 5m;
-
-        proxy_cache_key "Shost$request_uri $cookie_user";
-
-        proxy_cache_bypass $http_cache_bypass;
-
-        proxy_cache_bypass $arg_should_bypass_cache;
-
-        #proxy_cache_use_stale error http_500 http_503;
-
-        proxy_connect_timeout 60s;
-
-        proxy_cache_lock on;
-
-        add_header X-Proxy-Cache $upstream_cache_status;
-
-         
-
-            }
-
-      
-
-
-
-
-
-           location /ws/ {
-
-               proxy_pass http://0.0.0.0:9000;
-
-               proxy_http_version 1.1;
-
-               proxy_read_timeout 86400;
-
-               proxy_redirect     off;
-
-               proxy_set_header Upgrade $http_upgrade;
-
-               proxy_set_header Connection "upgrade";
-
-               proxy_set_header Host $host;
-
-               proxy_set_header X-Real-IP $remote_addr;
-
-               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-               proxy_set_header X-Forwarded-Host $server_name;
-
-               proxy_set_header User-Agent: $ua;
-
-           }
-
-
-
-
-
-    }
-
-
-
-
-
-}
-
-, but i got this error : 2025/01/16 16:10:29 [emerg] 1#1: mkdir() "/data/nginx/cache" failed (2: No such file or directory)
-
-nginx: [emerg] mkdir() "/data/nginx/cache" failed (2: No such file or directory)
-
-/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
-
-/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
-
-/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
-
-10-listen-on-ipv6-by-default.sh: info: IPv6 listen already enabled
-
-/docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
-
-/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
-
-/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
-
-/docker-entrypoint.sh: Configuration complete; ready for start up
-
-2025/01/16 16:11:33 [emerg] 1#1: mkdir() "/data/nginx/cache" failed (2: No such file or directory)
-
-nginx: [emerg] mkdir() "/data/nginx/cache" failed (2: No such file or directory)
+, but i dont know in this line of my nginx.conf :    root /home/code/;  ,  how can i set adress for root
